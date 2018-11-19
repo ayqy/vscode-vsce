@@ -5,6 +5,9 @@ import * as parseSemver from 'parse-semver';
 import * as _ from 'lodash';
 import { CancellationToken } from './util';
 
+// set child_process.exec() stdout buffer to 1MB (200KB by default)
+const maxBuffer = 1024 * 1024;
+
 interface IOptions {
 	cwd?: string;
 	stdio?: any;
@@ -54,7 +57,7 @@ function checkNPM(cancellationToken?: CancellationToken): Promise<void> {
 
 function getNpmDependencies(cwd: string): Promise<string[]> {
 	return checkNPM()
-		.then(() => exec('npm list --production --parseable --depth=99999', { cwd }))
+		.then(() => exec('npm list --production --parseable --depth=99999', { cwd, maxBuffer }))
 		.then(({ stdout }) => stdout
 			.split(/[\r\n]/)
 			.filter(dir => path.isAbsolute(dir)));
@@ -149,7 +152,7 @@ function selectYarnDependencies(deps: YarnDependency[], packagedDependencies: st
 }
 
 async function getYarnProductionDependencies(cwd: string, packagedDependencies?: string[]): Promise<YarnDependency[]> {
-	const raw = await new Promise<string>((c, e) => cp.exec('yarn list --prod --json', { cwd, encoding: 'utf8', env: { ...process.env } }, (err, stdout) => err ? e(err) : c(stdout)));
+	const raw = await new Promise<string>((c, e) => cp.exec('yarn list --prod --json', { cwd, encoding: 'utf8', maxBuffer, env: { ...process.env } }, (err, stdout) => err ? e(err) : c(stdout)));
 	const match = /^{"type":"tree".*$/m.exec(raw);
 
 	if (!match || match.length !== 1) {
