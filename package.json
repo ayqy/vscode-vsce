@@ -1,10 +1,10 @@
 {
-  "name": "vsce",
+  "name": "vsce-bigbuffer",
   "version": "1.53.0",
   "description": "VSCode Extension Manager",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vsce"
+    "url": "https://github.com/ayqy/vscode-vsce"
   },
   "homepage": "https://code.visualstudio.com",
   "bugs": "https://github.com/Microsoft/vsce/issues",
@@ -16,7 +16,7 @@
   "contributors": [
     "Microsoft Corporation"
   ],
-  "author": "Microsoft Corporation",
+  "author": "Microsoft Corporation & ayqy",
   "license": "MIT",
   "main": "out/api.js",
   "typings": "out/api.d.ts",
