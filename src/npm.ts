@@ -1,7 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as cp from 'child_process';
-import * as parseSemver from 'parse-semver';
 import * as _ from 'lodash';
 import { CancellationToken } from './util';
 
@@ -80,29 +79,44 @@ function asYarnDependency(prefix: string, tree: YarnTreeNode, prune: boolean): Y
 		return null;
 	}
 
-	let name: string, version: string;
+	return walk([path.resolve(prefix)], tree);
+}
 
-	try {
-		const parseResult = parseSemver(tree.name);
-		name = parseResult.name;
-		version = parseResult.version;
-	} catch (err) {
-		console.error('Failed to parse dependency:', tree.name);
+// yarn list on top level, but not there actually, maybe due to flattening
+let orphans = {};
+function walk(crumbs, node) {
+	let name = node.name;
+	let version = name.substr(name.lastIndexOf('@') + 1);
+	name = name.substr(0, name.lastIndexOf('@'));
+	let depPath = findDep(crumbs, name);
+	if (!depPath) {
+		orphans[node.name] = node;
 		return null;
 	}
-
-	const dependencyPath = path.join(prefix, name);
-	const children: YarnDependency[] = [];
-
-	for (const child of (tree.children || [])) {
-		const dep = asYarnDependency(path.join(prefix, name, 'node_modules'), child, prune);
-
-		if (dep) {
-			children.push(dep);
+	let children = [];
+	(node.children || []).forEach(child => {
+		if (orphans[child.name]) {
+			child = orphans[child.name];
 		}
-	}
+		let subDep = walk(crumbs.concat([name]), child);
+		children.push(subDep);
+	});
 
-	return { name, version, path: dependencyPath, children };
+	return { name, version, path: depPath, children };
+}
+
+function findDep(crumbs, name) {
+	let history = crumbs.slice();
+	while (history.length > 0) {
+		let joinedPath = history.concat([name]).join('/node_modules/');
+		let dir = path.resolve(joinedPath);
+		if (!fs.existsSync(dir)) {
+			history.pop();
+			continue;
+		}
+
+		return dir;
+	}
 }
 
 function selectYarnDependencies(deps: YarnDependency[], packagedDependencies: string[]): YarnDependency[] {
@@ -163,7 +177,9 @@ async function getYarnProductionDependencies(cwd: string, packagedDependencies?:
 	const trees = JSON.parse(match[0]).data.trees as YarnTreeNode[];
 
 	let result = trees
-		.map(tree => asYarnDependency(path.join(cwd, 'node_modules'), tree, !usingPackagedDependencies))
+		.slice()
+		.reverse()
+		.map(tree => asYarnDependency(path.join(cwd), tree, !usingPackagedDependencies))
 		.filter(dep => !!dep);
 
 	if (usingPackagedDependencies) {

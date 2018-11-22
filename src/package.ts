@@ -691,6 +691,9 @@ const defaultIgnore = [
 ];
 
 function collectAllFiles(cwd: string, useYarn = false, dependencyEntryPoints?: string[]): Promise<string[]> {
+	if (dependencyEntryPoints && dependencyEntryPoints.length === 0) {
+		return Promise.resolve([]);
+	}
 	return getDependencies(cwd, useYarn, dependencyEntryPoints).then(deps => {
 		const promises = deps.map(dep => {
 			return glob('**', { cwd: dep, nodir: true, dot: true, ignore: 'node_modules/**' })

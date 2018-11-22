@@ -203,8 +203,8 @@ describe('collect', function () {
 				let seenWhich: boolean;
 				let seenIsexe: boolean;
 				files.forEach(file => {
-					seenWhich = file.path.indexOf('/node_modules/which/') >= 0;
-					seenIsexe = file.path.indexOf('/node_modules/isexe/') >= 0;
+					seenWhich = seenWhich || file.path.indexOf('/node_modules/which/') >= 0;
+					seenIsexe = seenIsexe || file.path.indexOf('/node_modules/isexe/') >= 0;
 				});
 				assert.equal(seenWhich, true);
 				assert.equal(seenIsexe, true);
