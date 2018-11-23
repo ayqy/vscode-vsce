@@ -99,7 +99,9 @@ function walk(crumbs, node) {
 			child = orphans[child.name];
 		}
 		let subDep = walk(crumbs.concat([name]), child);
-		children.push(subDep);
+		if (subDep) {
+			children.push(subDep);
+		}
 	});
 
 	return { name, version, path: depPath, children };
